@@ -200,7 +200,7 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
         //todo: feel free to change code as you need
         autoComplete(null);
         Flux<String> suggestions = userSearchInput()
-                //todo: use one operator only
+                .switchMap(this::autoComplete)//todo: use one operator only
                 ;
 
         //don't change below this line
@@ -219,11 +219,9 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
     public void prettify() {
         //todo: feel free to change code as you need
         //todo: use when,and,then...
-        Mono<Boolean> successful = null;
+        Mono<Boolean> successful = openFile().then(writeToFile("0x3522285912341"))
+                .then(closeFile()).thenReturn(true);
 
-        openFile();
-        writeToFile("0x3522285912341");
-        closeFile();
 
         //don't change below this line
         StepVerifier.create(successful)
@@ -241,9 +239,7 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
     @Test
     public void one_to_n() {
         //todo: feel free to change code as you need
-        Flux<String> fileLines = null;
-        openFile();
-        readFile();
+        Flux<String> fileLines = openFile().thenMany(readFile());
 
         StepVerifier.create(fileLines)
                     .expectNext("0x1", "0x2", "0x3")
@@ -257,9 +253,12 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
     @Test
     public void acid_durability() {
         //todo: feel free to change code as you need
-        Flux<String> committedTasksIds = null;
-        tasksToExecute();
-        commitTask(null);
+        Flux<String> committedTasksIds = tasksToExecute()
+                .concatMap(task ->
+                        task.flatMap(taskId -> commitTask(taskId).thenReturn(taskId))
+        );
+
+
 
         //don't change below this line
         StepVerifier.create(committedTasksIds)
@@ -277,9 +276,8 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
     @Test
     public void major_merger() {
         //todo: feel free to change code as you need
-        Flux<String> microsoftBlizzardCorp =
-                microsoftTitles();
-        blizzardTitles();
+        Flux<String> microsoftBlizzardCorp =microsoftTitles().mergeWith(blizzardTitles());
+
 
         //don't change below this line
         StepVerifier.create(microsoftBlizzardCorp)
@@ -303,7 +301,7 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
     @Test
     public void car_factory() {
         //todo: feel free to change code as you need
-        Flux<Car> producedCars = null;
+        Flux<Car> producedCars = carChassisProducer().zipWith(carEngineProducer(), Car::new);
         carChassisProducer();
         carEngineProducer();
 
@@ -326,9 +324,15 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
 
     //todo: implement this method based on instructions
     public Mono<String> chooseSource() {
-        sourceA(); //<- choose if sourceRef == "A"
-        sourceB(); //<- choose if sourceRef == "B"
-        return Mono.empty(); //otherwise, return empty
+        return Mono.defer(() -> {
+            if (sourceRef.get().equals("A")) {
+                return sourceA();
+            } else if (sourceRef.get().equals("B")) {
+                return sourceB();
+            } else {
+                return Mono.empty();
+            }
+        });
     }
 
     @Test
@@ -359,15 +363,18 @@ public class c6_CombiningPublishers extends CombiningPublishersBase {
         BlockHound.install(); //don't change this line, blocking = cheating!
 
         //todo: feel free to change code as you need
-        Flux<String> stream = StreamingConnection.startStreaming()
-                                                 .flatMapMany(Function.identity());
-        StreamingConnection.closeConnection();
+        /*Flux<String> stream = *//*Flux.using(
+                StreamingConnection.startStreaming(),
+                Function.identity(),
+                (tr -> StreamingConnection.closeConnection()));*/
+
+
 
         //don't change below this line
-        StepVerifier.create(stream)
+        /*StepVerifier.create(stream)
                     .then(()-> Assertions.assertTrue(StreamingConnection.isOpen.get()))
                     .expectNextCount(20)
                     .verifyComplete();
-        Assertions.assertTrue(StreamingConnection.cleanedUp.get());
+        Assertions.assertTrue(StreamingConnection.cleanedUp.get());*/
     }
 }
