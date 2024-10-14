@@ -128,7 +128,7 @@ public class c10_Backpressure extends BackpressureBase {
     @Test
     public void pressure_is_too_much() {
         Flux<String> messageStream = messageStream3()
-
+                .onBackpressureError()
                 ;
 
         StepVerifier.create(messageStream, StepVerifierOptions.create()
@@ -149,7 +149,7 @@ public class c10_Backpressure extends BackpressureBase {
     @Test
     public void u_wont_brake_me() {
         Flux<String> messageStream = messageStream4()
-                //todo: change this line only
+                .onBackpressureError().bufferUntilChanged().flatMap(Flux::fromIterable)
                 ;
 
         StepVerifier.create(messageStream, StepVerifierOptions.create()
@@ -186,13 +186,21 @@ public class c10_Backpressure extends BackpressureBase {
                     @Override
                     protected void hookOnSubscribe(Subscription subscription) {
                         sub.set(subscription);
+                        request(1);
                     }
 
                     @Override
                     protected void hookOnNext(String s) {
                         System.out.println(s);
                         count.incrementAndGet();
+                        request(1);
+                        if (count.incrementAndGet() == 10){
+                            cancel();
+                        }
+
+
                     }
+
                     //-----------------------------------------------------
                 });
 

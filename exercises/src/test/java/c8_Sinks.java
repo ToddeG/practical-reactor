@@ -27,8 +27,10 @@ import java.util.List;
 public class c8_Sinks extends SinksBase {
 
     /**
-     * You need to execute operation that is submitted to legacy system which does not support Reactive API. You want to
-     * avoid blocking and let subscribers subscribe to `operationCompleted` Mono, that will emit `true` once submitted
+     * You need to execute operation that is submitted to legacy system which does not support Reactive API.
+     * You want to
+     * avoid blocking and let subscribers subscribe to `operationCompleted` Mono,
+     * that will emit `true` once submitted
      * operation is executed by legacy system.
      */
     @Test
@@ -36,7 +38,7 @@ public class c8_Sinks extends SinksBase {
         //todo: feel free to change code as you need
         Mono<Boolean> operationCompleted = null;
         submitOperation(() -> {
-
+                Sinks.one().tryEmitValue(true);
             doSomeWork(); //don't change this line
         });
 

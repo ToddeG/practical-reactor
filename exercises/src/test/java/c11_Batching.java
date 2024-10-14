@@ -1,8 +1,11 @@
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * Another way of controlling amount of data flowing is batching.
@@ -29,9 +32,8 @@ public class c11_Batching extends BatchingBase {
     @Test
     public void batch_writer() {
         //todo do your changes here
-        Flux<Void> dataStream = null;
-        dataStream();
-        writeToDisk(null);
+        Flux<Void> dataStream = dataStream().buffer(10).concatMap(this::writeToDisk);
+
 
         //do not change the code below
         StepVerifier.create(dataStream)
@@ -50,9 +52,14 @@ public class c11_Batching extends BatchingBase {
     @Test
     public void command_gateway() {
         //todo: implement your changes here
-        Flux<Void> processCommands = null;
-        inputCommandStream();
-        sendCommand(null);
+        Flux<Void> processCommands = inputCommandStream()
+                .parallel()
+                .runOn(Schedulers.parallel())
+                .sequential()
+                .groupBy(Command::getAggregateId)
+                .flatMap(e -> e.concatMap(n -> sendCommand(n)))
+                ;
+
 
         //do not change the code below
         Duration duration = StepVerifier.create(processCommands)
@@ -69,7 +76,8 @@ public class c11_Batching extends BatchingBase {
     @Test
     public void sum_over_time() {
         Flux<Long> metrics = metrics()
-                //todo: implement your changes here
+                .window(Duration.ofSeconds(1))
+                .flatMap( i -> i.reduce(0L, Long::sum))
                 .take(10);
 
         StepVerifier.create(metrics)
