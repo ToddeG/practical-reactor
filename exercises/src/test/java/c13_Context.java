@@ -31,8 +31,11 @@ public class c13_Context extends ContextBase {
      * id to the Reactor context. Your task is to extract the correlation id and attach it to the message object.
      */
     public Mono<Message> messageHandler(String payload) {
-        //todo: do your changes withing this method
-        return Mono.just(new Message("set correlation_id from context here", payload));
+        return Mono.deferContextual(ctx -> {
+            String correlationId = ctx.get(HTTP_CORRELATION_ID);
+
+            return Mono.just(new Message(correlationId, payload));
+        });
     }
 
     @Test
@@ -55,8 +58,8 @@ public class c13_Context extends ContextBase {
         Mono<Void> repeat = Mono.deferContextual(ctx -> {
             ctx.get(AtomicInteger.class).incrementAndGet();
             return openConnection();
-        });
-        //todo: change this line only
+        })
+                .contextWrite(Context.of(AtomicInteger.class, new AtomicInteger(0)))
         ;
 
         StepVerifier.create(repeat.repeat(4))
@@ -83,6 +86,7 @@ public class c13_Context extends ContextBase {
                 .flatMapMany(Page::getResult)
                 .repeat(10)
                 .doOnNext(i -> System.out.println("Received: " + i));
+
 
 
         //don't change this code
